@@ -14,13 +14,6 @@ YOU MUST SELECT A MOUSE SPEED other anti-bans are optional.
 ![image](https://user-images.githubusercontent.com/125089137/218599234-86f60e7b-1c60-4450-ac08-336f510b4389.png)
 
 
-
-Ensure your brightness setting is set to the middle. 
-
-![image](https://user-images.githubusercontent.com/125089137/218599062-de3e0d80-e80a-4319-9e8a-1603dcac447c.png)
-
-
-
 Stand near a Bank marked using cyan
 
 ![image](https://user-images.githubusercontent.com/125089137/218598211-46a89db8-1e59-4a99-9b27-d047eccce752.png)

@@ -16,8 +16,6 @@ import model.osrs.PotionMaker.potion_recipes as potion_recipes
 
 class OSRSPotionMaker(OSRSBot, launcher.Launchable):
 
-    api_m = MorgHTTPSocket()
-
     def __init__(self):
         bot_title = "ThatOneGuys Potion Maker"
         description = "This bot makes potions at the bank."
@@ -85,69 +83,41 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
     def main_loop(self):
         start_time = time.time()
         end_time = self.running_time * 60
-        print(self.mouse_speed)
-        self.setup()
+        self.sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
+        self.sleep_time_key = rd.fancy_normal_sample(0.067, 0.084)
+        self.sleep_time_between_key = rd.fancy_normal_sample(0.156, 0.248)
 
-        print(self.loop_to_run)
+        self.api_m = MorgHTTPSocket()
+
+        self.setup()
 
         start_time = time.time()
         end_time = self.running_time * 60
         while time.time() - start_time < end_time:
+
             # 5% chance to take a break between tree searches
             if rd.random_chance(probability=self.break_probabilty) and self.take_breaks:
                 self.take_break(min_seconds=self.break_length_min, max_seconds=self.break_length_max, fancy=True)
-            if self.loop_to_run == 1:
-                self.update_progress((time.time() - start_time) / end_time)
-                self.bot_loop_stackable()
-            elif self.loop_to_run == 2:
-                self.update_progress((time.time() - start_time) / end_time)
-                self.bot_loop_super_combat()
-            elif self.loop_to_run == 3:
-                self.update_progress((time.time() - start_time) / end_time)
-                self.bot_loop_main()
+
+                self.withdrawl_ingrediants(self.potion_to_make)
+
+                self.close_bank()
+
+                self.mix_ingredients(self.potion_to_make)
+
+                self.make_all()
+
+                self.check_inv(self.potion_to_make)
+
+                self.find_nearest_bank()
+
+                self.deposit_items()
+
+        self.update_progress((time.time() - start_time) / end_time)
+
         self.update_progress(1)
         self.log_msg("Finished.")
         self.stop()
-
-    def bot_loop_stackable(self):
-
-        self.withdrawl_ingrediants(self.potion_to_make)
-        self.close_bank()
-        self.mix_ingredients(self.potion_to_make)
-        self.make_all()
-        self.check_inv()
-        self.find_nearest_bank()
-        self.deposit_items()
-
-    def bot_loop_super_combat(self):
-
-        api_m = MorgHTTPSocket()
-
-        self.withdrawl_ingrediants_super_combat(self.potion_to_make)
-        self.close_bank()
-        self.mix_ingredients(self.potion_to_make)
-        self.make_all()
-        # self.check_inv()
-
-        while True:
-            number_of_pots = api_m.get_inv_item_indices(ids.SUPER_COMBAT_POTION4)
-            if len(number_of_pots) < 7:
-                time.sleep(.2)
-            else:
-                break
-
-        self.find_nearest_bank()
-        self.deposit_items()
-
-    def bot_loop_main(self):
-        print("made it to main loop")
-        self.withdrawl_ingrediants(self.potion_to_make)
-        self.close_bank()
-        self.mix_ingredients(self.potion_to_make)
-        self.make_all()
-        self.check_inv()
-        self.find_nearest_bank()
-        self.deposit_items()
 
     def find_nearest_bank(self):
 
@@ -163,8 +133,6 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
     def deposit_items(self):
         Desposit_all_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "deposit.png")
 
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
-
         while True:
             Desposit_all = imsearch.search_img_in_rect(Desposit_all_img, self.win.game_view)
             if Desposit_all:
@@ -174,17 +142,16 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
         self.log_msg("depositing all items")
         self.mouse.move_to(Desposit_all.random_point(), mouseSpeed=self.mouse_speed[0])
         self.mouse.click()
-        time.sleep(Sleep_time)
+        time.sleep(self.sleep_time)
 
     def open_up_potions_tab(self):
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
         Potions_tab_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "PotionsTab.png")
 
         if potions_tab := imsearch.search_img_in_rect(Potions_tab_img, self.win.game_view):
             self.log_msg("clicking potions tab")
             self.mouse.move_to(potions_tab.random_point())
             self.mouse.click()
-            time.sleep(Sleep_time)
+            time.sleep(self.sleep_time)
         else:
             self.log_msg("aaay you idiot there no potion tab")
 
@@ -194,13 +161,9 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
         self.mouse.click()
 
     def set_supplies_amount(self):
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
-        sleep_time_key = rd.fancy_normal_sample(0.067, 0.084)
-        sleep_time_between_key = rd.fancy_normal_sample(0.156, 0.248)
         withdrawl_x_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "withdrawl_x.png")
         withdrawl_x_clicked_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "withdrawl_x_clicked.png")
         withdrawl_all_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "withdrawl_all.png")
-        withdrawl_all_clicked_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "withdrawl_all_clicked.png")
         keywords = ["Divine", "Stamina", "Extended", "Ancient Brew", "Forgotten Brew"]
         keywords2 = ["Super Combat"]
         Pot_to_make = f"{self.potion_to_make}"
@@ -218,141 +181,56 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
                 found_keyword2 = True
                 break
 
-        # TODO this code doesn't seem to have select the 'ALL' functionality.
+        # If we're making 27/1 split potions (Stackable), withdraw all
         if found_keyword:
             if withdrawl_all := imsearch.search_img_in_rect(withdrawl_all_img, self.win.game_view):
                 self.mouse.move_to(withdrawl_all.random_point(), mouseSpeed=self.mouse_speed[0])
                 self.mouse.click
-                time.sleep(Sleep_time)
-            elif withdrawl_all_clicked := imsearch.search_img_in_rect(withdrawl_all_clicked_img, self.win.game_view):
-                time.sleep(Sleep_time)
+                time.sleep(self.sleep_time)
             else:
                 self.log_msg("Could not set withdrawl amount")
                 self.log_msg("Finished.")
                 self.stop()
 
-        elif found_keyword2:
+        # if we're making 7/7/7/7 or 14/14, withdraw 'x'
+        else:
+            # if we're making 7/7/7/7 split potion (Super Combat)
+            if found_keyword2:
+                withdraw_amount = ['7', ['7', 'enter']]
+            # default to 14/14 split potion
+            else:
+                withdraw_amount = ['14', ['1', '4', 'enter']]
+
             if Withdrawl_x := imsearch.search_img_in_rect(withdrawl_x_img, self.win.game_view):
                 self.log_msg("Setting withdrawl amount")
                 self.mouse.move_to(Withdrawl_x.random_point(), mouseSpeed=self.mouse_speed[0])
-                if not self.mouseover_text(contains='7', color=clr.OFF_WHITE):
-                    time.sleep(Sleep_time)
+                if not self.mouseover_text(contains=withdraw_amount[0], color=clr.OFF_WHITE):
+                    time.sleep(self.sleep_time)
                     self.mouse.right_click()
-                    time.sleep(Sleep_time)
+                    time.sleep(self.sleep_time)
                     self.mouse.move_rel(0, 40)
                     self.mouse.click()
-                    time.sleep(Sleep_time)
-                    pag.keyDown('7')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('7')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('enter')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('enter')
+                    time.sleep(self.sleep_time)
+                    pag.press(withdraw_amount[1], interval=self.sleep_time_between_key)
+                else:
+                    self.mouse.click()
             elif Withdrawl_x := imsearch.search_img_in_rect(withdrawl_x_clicked_img, self.win.game_view):
                 self.log_msg("Setting withdrawl amount")
                 self.mouse.move_to(Withdrawl_x.random_point(), mouseSpeed=self.mouse_speed[0])
                 if not self.mouseover_text(contains='7', color=clr.OFF_WHITE):
                     self.mouse.click()
-                    time.sleep(Sleep_time)
+                    time.sleep(self.sleep_time)
                     self.mouse.right_click()
                     time.sleep(0.2)
                     self.mouse.move_rel(0, 40)
-                    time.sleep(Sleep_time)
+                    time.sleep(self.sleep_time)
                     self.mouse.click()
-                    time.sleep(Sleep_time)
-                    pag.keyDown('7')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('7')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('enter')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('enter')
+                    time.sleep(self.sleep_time)
+                    pag.press(withdraw_amount[1], interval=self.sleep_time_between_key)
             else:
                 self.log_msg("Could not set withdrawl amount")
                 self.log_msg("Finished.")
                 self.stop()
-        else:
-            if Withdrawl_x := imsearch.search_img_in_rect(withdrawl_x_img, self.win.game_view):
-                self.log_msg("Setting withdrawl amount")
-                self.mouse.move_to(Withdrawl_x.random_point(), mouseSpeed=self.mouse_speed[0])
-                if not self.mouseover_text(contains='14', color=clr.OFF_WHITE):
-                    time.sleep(Sleep_time)
-                    self.mouse.right_click()
-                    time.sleep(Sleep_time)
-                    self.mouse.move_rel(0, 40)
-                    self.mouse.click()
-                    pag.keyDown('1')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('1')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('4')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('4')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('enter')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('enter')
-                    time.sleep(sleep_time_between_key)
-
-            elif Withdrawl_x := imsearch.search_img_in_rect(withdrawl_x_clicked_img, self.win.game_view):
-
-                self.log_msg("Setting withdrawl amount")
-                self.mouse.move_to(Withdrawl_x.random_point(), mouseSpeed=self.mouse_speed[0])
-                if not self.mouseover_text(contains='14', color=clr.OFF_WHITE):
-                    self.mouse.click()
-                    time.sleep(sleep_time_between_key)
-                    self.mouse.right_click()
-                    time.sleep(0.2)
-                    self.mouse.move_rel(0, 40)
-                    time.sleep(Sleep_time)
-                    self.mouse.click()
-                    time.sleep(Sleep_time)
-                    pag.keyDown('1')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('1')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('4')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('4')
-                    time.sleep(sleep_time_between_key)
-                    pag.keyDown('enter')
-                    time.sleep(sleep_time_key)
-                    pag.keyUp('enter')
-                    time.sleep(sleep_time_between_key)
-
-            else:
-                self.log_msg("Could not set withdrawl amount")
-                self.log_msg("Finished.")
-                self.stop()
-
-    def withdrawl_ingrediants(self, potion_name):
-        if potion_name in potion_recipes.potion_recipes:
-            ingredients = potion_recipes.potion_recipes[potion_name]
-            ingredient1, ingredient2 = ingredients
-            print(ingredient1, ingredient2)
-        else:
-            self.log_msg(f"No recipe found for {potion_name}")
-            self.stop()
-
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
-        Ingrediant_one_img = imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient1)
-        Ingrediant_two_img = imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient2)
-        if Ingrediant_one := imsearch.search_img_in_rect(Ingrediant_one_img, self.win.game_view):
-            self.mouse.move_to(Ingrediant_one.random_point(), mouseSpeed=self.mouse_speed[0])
-            self.mouse.click()
-            time.sleep(Sleep_time)
-        else:
-            self.log_msg("Out of ingredients")
-            self.stop()
-
-        if Ingrediant_two := imsearch.search_img_in_rect(Ingrediant_two_img, self.win.game_view):
-            self.mouse.move_to(Ingrediant_two.random_point(), mouseSpeed=self.mouse_speed[0])
-            self.mouse.click()
-            time.sleep(Sleep_time)
-        else:
-            self.log_msg("Out of ingredients")
-            self.stop()
 
     def setup(self):
         keywords = ["Divine", "Stamina", "Extended", "Ancient Brew", "Forgotten Brew"]
@@ -391,141 +269,99 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
     def mix_ingredients(self, potion_name):
         if potion_name in potion_recipes.potion_recipes:
 
-            ingredients_list = [imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient) for ingredient in potion_recipes.potion_recipes[potion_name]]
+            ingredients_list = [imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient) for ingredient in potion_recipes.potion_recipes[potion_name][0]]
         else:
             self.log_msg(f"No recipe found for {potion_name}")
             self.stop()
-
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
 
         for ingredient in ingredients_list[:2]:
             if ingrediant_location := imsearch.search_img_in_rect(ingredient, self.win.control_panel, 0.5):
                 self.mouse.move_to(ingrediant_location.random_point(), mouseSpeed=self.mouse_speed[0])
                 self.mouse.click()
-                time.sleep(Sleep_time)
+                time.sleep(self.sleep_time)
             else:
                 self.log_msg("Out of ingredient: {0}".format(str(ingredient).split('\\')[-1]))
                 self.stop()
 
     def close_bank(self):
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
         Close_Bank_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "x.png")
 
         if Close_bank := imsearch.search_img_in_rect(Close_Bank_img, self.win.game_view):
             self.mouse.move_to(Close_bank.random_point(), mouseSpeed=self.mouse_speed[0])
             self.mouse.click()
-            time.sleep(Sleep_time)
+            time.sleep(self.sleep_time)
         else:
             self.log_msg("Could not close bank")
             self.stop()
 
     def make_all(self):
-        sleep_time_key = rd.fancy_normal_sample(0.067, 0.084)
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
         make_all_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "make_all.png")
         make_all_not_marked_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "make_all_clicked.png")
 
-        searches = 0
+        counter = 0
 
         while True:
             if make_all := imsearch.search_img_in_rect(make_all_not_marked_img, self.win.chat, confidence=0.4):
                 self.mouse.move_to(make_all.random_point(), mouseSpeed=self.mouse_speed[0])
                 self.mouse.click()
-                time.sleep(Sleep_time)
+                time.sleep(self.sleep_time)
                 pag.keyDown('space')
-                time.sleep(sleep_time_key)
+                time.sleep(self.sleep_time_key)
                 pag.keyUp('space')
                 break
 
             elif imsearch.search_img_in_rect(make_all_img, self.win.chat):
                 pag.keyDown('space')
-                time.sleep(sleep_time_key)
+                time.sleep(self.sleep_time_key)
                 pag.keyUp('space')
                 break
 
             else:
                 time.sleep(0.01)
-                searches += 1
+                counter += 1
 
-            if searches >= 60:
+            if counter >= 60:
                 self.log_msg("Couldn't make all potions")
                 self.stop()
 
-    def check_inv(self):
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
-        emptyslot27_img = imsearch.BOT_IMAGES.joinpath("potion_bot", "inventoryslot27.png")
-        counter = 0
-        finished = False
-        while counter < 60 and not finished:
-            while True:
-                emptyslot27 = imsearch.search_img_in_rect(emptyslot27_img, self.win.inventory_slots[27])
-                if emptyslot27:
-                    self.log_msg("Finished potions")
-                    finished = True
-                    break
-                self.log_msg("waiting to finish potions")
-                counter += 1
-                time.sleep(1)
-        if finished:
-            self.log_msg("All motions were made")
-            time.sleep(Sleep_time)
-        else:
-            self.log_msg("failed to determine if all motions were made")
-            self.stop()
+    def check_inv(self, potion_name):
 
-    def withdrawl_ingrediants_stackable(self, potion_name):
-        if potion_name in potion_recipes.potion_recipes:
-            ingredients = potion_recipes.potion_recipes[potion_name]
-            ingredient1, ingredient2 = ingredients
-            print(ingredient1, ingredient2)
-        else:
-            self.log_msg(f"No recipe found for {potion_name}")
-            self.stop()
+        while True:
 
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
-        Ingrediant_one_img = imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient1)
-        Ingrediant_two_img = imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient2)
-        First_run = False
-        if Ingrediant_one := imsearch.search_img_in_rect(Ingrediant_one_img, self.win.game_view):
-            self.mouse.move_to(Ingrediant_one.random_point(), mouseSpeed=self.mouse_speed[0])
-            self.mouse.click()
-            time.sleep(Sleep_time)
-        else:
-            self.log_msg("Out of ingredients")
-            self.stop()
-        if First_run:
-            if Ingrediant_two := imsearch.search_img_in_rect(Ingrediant_two_img, self.win.game_view):
-                self.mouse.move_to(Ingrediant_two.random_point(), mouseSpeed=self.mouse_speed[0])
-                self.mouse.click()
-                time.sleep(Sleep_time)
-                First_run = False
+            count_of_ingredients = []
+
+            # retrieve all ID's of ingredients for currnet potion
+            ingredient_ids = potion_recipes.potion_recipes[potion_name][1]
+
+            # get the count of
+            for ingredient_id in ingredient_ids:
+                count_of_ingredients.append(len(self.api_m.get_inv_item_indices(ingredient_id)))
+
+            # if we still have at least one of each ingredient, sleep and check again
+            if min(count_of_ingredients) > 0:
+                time.sleep(.2)
             else:
-                self.log_msg("Out of ingredients")
-                self.stop()
+                return
 
-        if Ingrediant_two := imsearch.search_img_in_rect(Ingrediant_two_img, self.win.control_panel):
-            time.sleep(0.1)
-        else:
-            self.log_msg("Out of ingredients")
-            self.stop()
-
-    def withdrawl_ingrediants_super_combat(self, potion_name):
+    def withdrawl_ingrediants(self, potion_name: str):
+        '''
+        Retrieve each ingrident for SCB potion from bank based on definition in `potion_name`
+        '''
 
         if potion_name in potion_recipes.potion_recipes:
 
-            ingredients_list = [imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient) for ingredient in potion_recipes.potion_recipes[potion_name]]
+            # List comprehension to turn each item's file_name string into a readable path
+            ingredients_list = [imsearch.BOT_IMAGES.joinpath("potion_bot", ingredient) for ingredient in potion_recipes.potion_recipes[potion_name][0]]
         else:
             self.log_msg(f"No recipe found for {potion_name}")
             self.stop()
-
-        Sleep_time = rd.fancy_normal_sample(self.time_between_actions_min, self.time_between_actions_max)
 
         # for loop to withdraw the required ingredients
         for ingredient in ingredients_list:
             if ingrediant_location := imsearch.search_img_in_rect(ingredient, self.win.game_view, 0.5):
                 self.mouse.move_to(ingrediant_location.random_point(), mouseSpeed=self.mouse_speed[0])
                 self.mouse.click()
-                time.sleep(Sleep_time)
+                time.sleep(self.sleep_time)
             else:
                 self.log_msg("Out of ingredient: {0}".format(str(ingredient).split('\\')[-1]))
                 self.stop()

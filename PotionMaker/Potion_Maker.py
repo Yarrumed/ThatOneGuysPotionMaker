@@ -181,7 +181,7 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
                 found_keyword2 = True
                 break
 
-        # If we're making 27/1 split potions (Stackable), withdraw all
+        # If we're making 27/1 split potions (Stackable), set withdraw all to be active
         if found_keyword:
             if withdrawl_all := imsearch.search_img_in_rect(withdrawl_all_img, self.win.game_view):
                 self.mouse.move_to(withdrawl_all.random_point(), mouseSpeed=self.mouse_speed[0])
@@ -192,7 +192,7 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
                 self.log_msg("Finished.")
                 self.stop()
 
-        # if we're making 7/7/7/7 or 14/14, withdraw 'x'
+        # if we're making 7/7/7/7 or 14/14, set withdraw 'x' to be active
         else:
             # if we're making 7/7/7/7 split potion (Super Combat)
             if found_keyword2:
@@ -258,7 +258,7 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
             self.loop_to_run = 3
         elif found_keyword is True and found_keyword2 is True:
             self.log_msg("Problem occurred, should not be possible for both keyword criteria")
-            raise Exception
+            self.stop()
 
         self.open_inventory()
         self.find_nearest_bank()
@@ -330,10 +330,10 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
 
             count_of_ingredients = []
 
-            # retrieve all ID's of ingredients for currnet potion
+            # retrieve the ID's of ingredients for currnet potion
             ingredient_ids = potion_recipes.potion_recipes[potion_name][1]
 
-            # get the count of
+            # get the count ID's in inventory
             for ingredient_id in ingredient_ids:
                 count_of_ingredients.append(len(self.api_m.get_inv_item_indices(ingredient_id)))
 
@@ -344,9 +344,6 @@ class OSRSPotionMaker(OSRSBot, launcher.Launchable):
                 return
 
     def withdrawl_ingrediants(self, potion_name: str):
-        '''
-        Retrieve each ingrident for SCB potion from bank based on definition in `potion_name`
-        '''
 
         if potion_name in potion_recipes.potion_recipes:
 
